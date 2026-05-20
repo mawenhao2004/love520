@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>520 · 告白</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a14;
+    --gold: #d4a574;
+    --gold-warm: #c9956b;
+    --gold-light: #e8c9a0;
+    --text: #f0e6d8;
+    --text-dim: #8a8070;
+    --glass: rgba(18, 14, 28, 0.55);
+    --glass-border: rgba(212, 165, 116, 0.15);
+    --glow: rgba(212, 165, 116, 0.3);
+  }
+
+  body {
+    background: var(--bg);
+    font-family: 'Noto Serif SC', 'STSong', 'SimSun', serif;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  canvas#particles {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+  }
+
+  /* ── overlay ── */
+  .overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  /* ── music toggle ── */
+  .music-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 10;
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    border: 1px solid var(--glass-border);
+    background: var(--glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    color: var(--gold);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.5s ease;
+    pointer-events: all;
+  }
+  .music-btn:hover { border-color: var(--gold); box-shadow: 0 0 30px var(--glow); }
+  .music-btn.playing { background: rgba(212, 165, 116, 0.12); }
+
+  /* ── stage text ── */
+  .stage {
+    position: absolute;
+    text-align: center;
+    transition: opacity 0.8s ease, transform 0.8s ease;
+    opacity: 0;
+    pointer-events: none;
+    max-width: 90vw;
+  }
+  .stage.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .stage-subtitle {
+    font-size: clamp(14px, 2.5vw, 18px);
+    color: var(--text-dim);
+    letter-spacing: 6px;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+
+  .stage-title {
+    font-size: clamp(24px, 6vw, 42px);
+    font-weight: 300;
+    color: var(--text);
+    letter-spacing: 4px;
+    line-height: 1.8;
+  }
+
+  .stage-title .highlight {
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  /* ── heart ── */
+  .heart-container {
+    position: relative;
+    width: 120px; height: 120px;
+    margin: 0 auto 30px;
+  }
+
+  .heart-svg {
+    width: 100%; height: 100%;
+    filter: drop-shadow(0 0 30px var(--glow));
+  }
+
+  @keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    14% { transform: scale(1.12); }
+    28% { transform: scale(1); }
+    42% { transform: scale(1.12); }
+    56% { transform: scale(1); }
+  }
+
+  .heart-beating {
+    animation: heartbeat 1.4s ease-in-out infinite;
+  }
+
+  /* ── big reveal ── */
+  .reveal-text {
+    font-size: clamp(48px, 15vw, 120px);
+    font-weight: 700;
+    color: transparent;
+    background: linear-gradient(135deg, #d4a574 0%, #e8c9a0 30%, #f0dcc0 50%, #c9956b 70%, #d4a574 100%);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    letter-spacing: 12px;
+    animation: shimmer 3s ease-in-out infinite;
+    text-shadow: none;
+    filter: drop-shadow(0 0 40px rgba(212, 165, 116, 0.5));
+  }
+
+  @keyframes shimmer {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  .reveal-sub {
+    font-size: clamp(14px, 3vw, 20px);
+    color: var(--text-dim);
+    letter-spacing: 8px;
+    margin-top: 16px;
+    opacity: 0;
+    animation: fadeIn 1.2s 0.6s ease forwards;
+  }
+
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
+
+  /* ── finale ── */
+  .finale-520 {
+    font-size: clamp(64px, 20vw, 160px);
+    font-weight: 700;
+    background: linear-gradient(180deg, #e8c9a0 0%, #d4a574 40%, #a07040 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: 16px;
+    filter: drop-shadow(0 0 60px rgba(212, 165, 116, 0.6));
+  }
+
+  .finale-msg {
+    font-size: clamp(16px, 3.5vw, 24px);
+    color: var(--text);
+    letter-spacing: 4px;
+    line-height: 2;
+    margin-top: 24px;
+    opacity: 0;
+    animation: fadeIn 1.5s 0.8s ease forwards;
+  }
+
+  .finale-msg .gold {
+    color: var(--gold-light);
+    font-weight: 400;
+  }
+
+  /* ── hint ── */
+  .hint {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    color: var(--text-dim);
+    font-size: 13px;
+    letter-spacing: 3px;
+    opacity: 0;
+    transition: opacity 1s ease;
+    pointer-events: none;
+  }
+  .hint.visible { opacity: 0.5; }
+
+  .hint-dot {
+    display: inline-block;
+    animation: hintBounce 1.5s ease-in-out infinite;
+    margin: 0 2px;
+  }
+  .hint-dot:nth-child(2) { animation-delay: 0.2s; }
+  .hint-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes hintBounce {
+    0%, 100% { transform: translateY(0); opacity: 0.3; }
+    50% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  /* ── date badge ── */
+  .date-badge {
+    position: fixed;
+    top: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    padding: 8px 24px;
+    border: 1px solid var(--glass-border);
+    border-radius: 50px;
+    background: var(--glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    color: var(--gold);
+    font-size: 13px;
+    letter-spacing: 4px;
+    opacity: 0;
+    transition: opacity 1s ease;
+    pointer-events: none;
+  }
+  .date-badge.visible { opacity: 0.8; }
+</style>
+</head>
+<body>
+
+<canvas id="particles"></canvas>
+
+<div class="date-badge" id="dateBadge">2026 · 05 · 20</div>
+
+<div class="overlay" id="overlay">
+
+  <!-- Stage 1: 入场 -->
+  <div class="stage active" id="stage1">
+    <div class="stage-subtitle">CHAPTER ONE</div>
+    <div class="stage-title">今天<br>是<span class="highlight">特别</span>的一天</div>
+  </div>
+
+  <!-- Stage 2: 心动 -->
+  <div class="stage" id="stage2">
+    <div class="heart-container heart-beating" id="heartContainer">
+      <svg class="heart-svg" viewBox="0 0 100 100">
+        <defs>
+          <linearGradient id="heartGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#e8c9a0"/>
+            <stop offset="50%" style="stop-color:#d4a574"/>
+            <stop offset="100%" style="stop-color:#a07040"/>
+          </linearGradient>
+        </defs>
+        <path d="M50 88 C20 62, 0 46, 0 28 C0 12, 14 0, 28 0 C38 0, 46 8, 50 16 C54 8, 62 0, 72 0 C86 0, 100 12, 100 28 C100 46, 80 62, 50 88Z"
+              fill="url(#heartGrad)" opacity="0.9"/>
+      </svg>
+    </div>
+    <div class="stage-subtitle">CHAPTER TWO</div>
+    <div class="stage-title">有些话<br><span class="highlight">藏了很久</span></div>
+  </div>
+
+  <!-- Stage 3: 告白 -->
+  <div class="stage" id="stage3">
+    <div class="reveal-text">我爱你</div>
+    <div class="reveal-sub">— 不只是一句话 —</div>
+  </div>
+
+  <!-- Stage 4: 绽放 -->
+  <div class="stage" id="stage4">
+    <div class="finale-520">520</div>
+    <div class="finale-msg">
+      愿每一份<span class="gold">真心</span><br>
+      都不被<span class="gold">辜负</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="hint visible" id="hint">
+  轻触屏幕继续 <span class="hint-dot">·</span><span class="hint-dot">·</span><span class="hint-dot">·</span>
+</div>
+
+<button class="music-btn" id="musicBtn" title="开启音乐">♪</button>
+
+<script>
+// ──────────────────────────────────
+//  STATE
+// ──────────────────────────────────
+let stage = 1;
+const TOTAL_STAGES = 4;
+let transitioning = false;
+
+// ──────────────────────────────────
+//  AUDIO — Web Audio ambient pad
+// ──────────────────────────────────
+let audioCtx = null;
+let audioPlaying = false;
+let masterGain = null;
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0;
+  masterGain.connect(audioCtx.destination);
+
+  // Warm pad: layered sine waves in C major chord (C E G)
+  const freqs = [261.63, 329.63, 392.00, 523.25]; // C4 E4 G4 C5
+  const oscillators = [];
+
+  freqs.forEach((freq, i) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+
+    // Gentle LFO for warmth
+    const lfo = audioCtx.createOscillator();
+    const lfoGain = audioCtx.createGain();
+    lfo.frequency.value = 0.08 + i * 0.02;
+    lfoGain.gain.value = 2;
+    lfo.connect(lfoGain);
+    lfoGain.connect(osc.frequency);
+    lfo.start();
+
+    gain.gain.value = 0.04 / freqs.length;
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start();
+    oscillators.push({ osc, gain, lfo, lfoGain });
+  });
+
+  // Slow fade in
+  masterGain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 2);
+  audioPlaying = true;
+  document.getElementById('musicBtn').classList.add('playing');
+  document.getElementById('musicBtn').textContent = '♫';
+}
+
+function stopAudio() {
+  if (!audioCtx) return;
+  masterGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1);
+  setTimeout(() => {
+    if (audioCtx) audioCtx.suspend();
+    audioPlaying = false;
+    document.getElementById('musicBtn').classList.remove('playing');
+    document.getElementById('musicBtn').textContent = '♪';
+  }, 1100);
+}
+
+function toggleAudio() {
+  if (!audioCtx) {
+    initAudio();
+    return;
+  }
+  if (audioPlaying) {
+    stopAudio();
+  } else {
+    audioCtx.resume();
+    masterGain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 1.5);
+    audioPlaying = true;
+    document.getElementById('musicBtn').classList.add('playing');
+    document.getElementById('musicBtn').textContent = '♫';
+  }
+}
+
+document.getElementById('musicBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  toggleAudio();
+});
+
+// ──────────────────────────────────
+//  CANVAS PARTICLES
+// ──────────────────────────────────
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+let W, H;
+let particles = [];
+let targetMode = 'scattered'; // scattered | heart | burst | firework
+let modeTransition = 0;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+class Particle {
+  constructor() {
+    this.reset();
+  }
+  reset() {
+    this.x = Math.random() * W;
+    this.y = Math.random() * H;
+    this.baseX = this.x;
+    this.baseY = this.y;
+    this.size = Math.random() * 2 + 0.5;
+    this.speed = Math.random() * 0.4 + 0.1;
+    this.angle = Math.random() * Math.PI * 2;
+    this.amplitude = Math.random() * 30 + 10;
+    this.phase = Math.random() * Math.PI * 2;
+    this.opacity = Math.random() * 0.5 + 0.3;
+    this.twinkleSpeed = Math.random() * 0.02 + 0.005;
+    this.twinklePhase = Math.random() * Math.PI * 2;
+    this.colorMode = 'gold';
+  }
+
+  heartPosition(t) {
+    // Parametric heart curve (scaled)
+    const scale = Math.min(W, H) * 0.004;
+    const x = 16 * Math.pow(Math.sin(t), 3);
+    const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+    return {
+      x: W/2 + x * scale * (0.8 + Math.random() * 0.4),
+      y: H/2 - y * scale * (0.8 + Math.random() * 0.4)
+    };
+  }
+
+  update(time, mode) {
+    const t = time * 0.001;
+
+    switch (mode) {
+      case 'scattered':
+        this.x = this.baseX + Math.sin(t * this.speed + this.phase) * this.amplitude * 0.3;
+        this.y = this.baseY - this.speed * 0.1 + Math.cos(t * this.speed * 0.7 + this.phase) * this.amplitude * 0.2;
+        if (this.y < -20) { this.y = H + 20; this.baseY = this.y; }
+        this.colorMode = 'gold';
+        break;
+
+      case 'heart':
+        const ht = this.angle + t * 0.3;
+        const hp = this.heartPosition(ht % (Math.PI * 2));
+        this.x += (hp.x - this.x) * 0.04;
+        this.y += (hp.y - this.y) * 0.04;
+        this.colorMode = 'rose';
+        break;
+
+      case 'burst':
+        this.x += Math.cos(this.angle) * this.speed * 3;
+        this.y += Math.sin(this.angle) * this.speed * 3;
+        this.speed *= 0.996;
+        this.opacity -= 0.002;
+        if (this.opacity <= 0) this.reset();
+        this.colorMode = Math.random() > 0.5 ? 'gold' : 'warm';
+        break;
+
+      case 'firework':
+        this.x += Math.cos(this.angle) * this.speed * 1.5;
+        this.y += Math.sin(this.angle) * this.speed * 1.5 + 0.3;
+        this.speed *= 0.995;
+        this.opacity -= 0.0015;
+        this.size *= 0.998;
+        if (this.opacity <= 0 || this.y > H + 50 || this.x < -50 || this.x > W + 50) {
+          this.reset();
+          this.baseX = W/2 + (Math.random() - 0.5) * W * 0.8;
+          this.baseY = H/2 + (Math.random() - 0.5) * H * 0.6;
+          this.x = this.baseX;
+          this.y = this.baseY;
+          this.opacity = Math.random() * 0.6 + 0.3;
+          this.size = Math.random() * 3 + 1;
+          this.angle = Math.random() * Math.PI * 2;
+          this.speed = Math.random() * 3 + 1;
+        }
+        this.colorMode = ['gold', 'rose', 'warm', 'light'][Math.floor(Math.random() * 4)];
+        break;
+    }
+
+    // Twinkle
+    this.twinklePhase += this.twinkleSpeed;
+  }
+
+  draw(ctx) {
+    const twinkle = 0.5 + 0.5 * Math.sin(this.twinklePhase);
+    const alpha = this.opacity * (0.6 + 0.4 * twinkle);
+
+    let color;
+    switch (this.colorMode) {
+      case 'gold': color = `rgba(212,165,116,${alpha})`; break;
+      case 'rose': color = `rgba(232,180,150,${alpha})`; break;
+      case 'warm': color = `rgba(201,149,107,${alpha})`; break;
+      case 'light': color = `rgba(240,220,192,${alpha})`; break;
+      default: color = `rgba(212,165,116,${alpha})`;
+    }
+
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    // Glow for larger particles
+    if (this.size > 1.5) {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size * 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = color.replace(/[\d.]+\)$/, `${alpha * 0.15})`);
+      ctx.fill();
+    }
+  }
+}
+
+// Init particles
+const PARTICLE_COUNT = 180;
+for (let i = 0; i < PARTICLE_COUNT; i++) {
+  particles.push(new Particle());
+}
+
+// ──────────────────────────────────
+//  FIREWORK BURSTS
+// ──────────────────────────────────
+let fireworks = [];
+
+function spawnFirework(x, y) {
+  const count = 30 + Math.floor(Math.random() * 40);
+  const colors = ['gold', 'rose', 'warm', 'light'];
+  for (let i = 0; i < count; i++) {
+    fireworks.push({
+      x, y,
+      vx: Math.cos(i / count * Math.PI * 2) * (Math.random() * 4 + 2),
+      vy: Math.sin(i / count * Math.PI * 2) * (Math.random() * 4 + 2),
+      life: 1,
+      decay: 0.008 + Math.random() * 0.015,
+      size: Math.random() * 3 + 1.5,
+      color: colors[Math.floor(Math.random() * 4)]
+    });
+  }
+}
+
+function updateFireworks() {
+  fireworks = fireworks.filter(f => {
+    f.x += f.vx;
+    f.y += f.vy;
+    f.vy += 0.04;
+    f.life -= f.decay;
+    f.size *= 0.998;
+    return f.life > 0;
+  });
+}
+
+function drawFireworks(ctx) {
+  fireworks.forEach(f => {
+    let color;
+    switch (f.color) {
+      case 'gold': color = `rgba(212,165,116,${f.life})`; break;
+      case 'rose': color = `rgba(232,180,150,${f.life})`; break;
+      case 'warm': color = `rgba(201,149,107,${f.life})`; break;
+      case 'light': color = `rgba(240,220,192,${f.life})`; break;
+      default: color = `rgba(212,165,116,${f.life})`;
+    }
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, f.size, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    // Glow halo
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, f.size * 3, 0, Math.PI * 2);
+    ctx.fillStyle = color.replace(/[\d.]+\)$/, `${f.life * 0.12})`);
+    ctx.fill();
+  });
+}
+
+// ──────────────────────────────────
+//  AMBIENT LIGHT RAYS (stage 3)
+// ──────────────────────────────────
+let lightRayAngle = 0;
+function drawLightRays(ctx, alpha) {
+  if (alpha <= 0) return;
+  lightRayAngle += 0.003;
+  const cx = W / 2;
+  const cy = H / 2;
+  const rayCount = 12;
+  for (let i = 0; i < rayCount; i++) {
+    const angle = lightRayAngle + (i / rayCount) * Math.PI * 2;
+    const gradient = ctx.createLinearGradient(
+      cx, cy,
+      cx + Math.cos(angle) * Math.max(W, H),
+      cy + Math.sin(angle) * Math.max(W, H)
+    );
+    gradient.addColorStop(0, `rgba(212,165,116,${alpha * 0.15})`);
+    gradient.addColorStop(0.3, `rgba(212,165,116,${alpha * 0.05})`);
+    gradient.addColorStop(1, 'rgba(212,165,116,0)');
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(angle - 0.15) * Math.max(W, H) * 1.5, cy + Math.sin(angle - 0.15) * Math.max(W, H) * 1.5);
+    ctx.lineTo(cx + Math.cos(angle + 0.15) * Math.max(W, H) * 1.5, cy + Math.sin(angle + 0.15) * Math.max(W, H) * 1.5);
+    ctx.closePath();
+    ctx.fillStyle = gradient;
+    ctx.fill();
+  }
+}
+
+// ──────────────────────────────────
+//  RENDER LOOP
+// ──────────────────────────────────
+let modeTransitionProgress = 0;
+let targetTransitionProgress = 0;
+
+function getModeForStage(s) {
+  switch (s) {
+    case 1: return 'scattered';
+    case 2: return 'heart';
+    case 3: return 'burst';
+    case 4: return 'firework';
+    default: return 'scattered';
+  }
+}
+
+let lastFireworkTime = 0;
+
+function render(timestamp) {
+  ctx.clearRect(0, 0, W, H);
+
+  // Smooth mode transition
+  const currentMode = getModeForStage(stage);
+  if (targetMode !== currentMode) {
+    targetMode = currentMode;
+    modeTransitionProgress = 0;
+    targetTransitionProgress = 1;
+  }
+  if (targetTransitionProgress > 0) {
+    modeTransitionProgress += 0.015;
+    if (modeTransitionProgress >= 1) {
+      modeTransitionProgress = 1;
+      targetTransitionProgress = 0;
+    }
+  }
+
+  const mode = currentMode;
+
+  // Update & draw particles
+  particles.forEach(p => {
+    p.update(timestamp, mode);
+    p.draw(ctx);
+  });
+
+  // Stage 3: spawn burst particles from center periodically
+  if (stage === 3 && timestamp - lastFireworkTime > 2000) {
+    lastFireworkTime = timestamp;
+    spawnFirework(W/2 + (Math.random() - 0.5) * 200, H/2 + (Math.random() - 0.5) * 150);
+  }
+
+  // Stage 4: fireworks
+  if (stage === 4 && timestamp - lastFireworkTime > 800) {
+    lastFireworkTime = timestamp;
+    spawnFirework(
+      W * 0.2 + Math.random() * W * 0.6,
+      H * 0.2 + Math.random() * H * 0.4
+    );
+  }
+
+  updateFireworks();
+  drawFireworks(ctx);
+
+  // Light rays for stage 3
+  const raysAlpha = stage === 3 ? Math.min(modeTransitionProgress * 2, 1) :
+                    stage === 4 ? Math.max(0, 1 - modeTransitionProgress * 3) : 0;
+  drawLightRays(ctx, raysAlpha);
+
+  requestAnimationFrame(render);
+}
+requestAnimationFrame(render);
+
+// ──────────────────────────────────
+//  STAGE TRANSITIONS
+// ──────────────────────────────────
+const dateBadge = document.getElementById('dateBadge');
+const hint = document.getElementById('hint');
+const stages = {
+  1: document.getElementById('stage1'),
+  2: document.getElementById('stage2'),
+  3: document.getElementById('stage3'),
+  4: document.getElementById('stage4'),
+};
+
+function transitionTo(newStage) {
+  if (transitioning || newStage === stage || newStage < 1 || newStage > TOTAL_STAGES) return;
+  transitioning = true;
+
+  const oldEl = stages[stage];
+  const newEl = stages[newStage];
+
+  // Fade out current
+  if (oldEl) {
+    oldEl.style.opacity = '0';
+    oldEl.style.transform = 'translateY(-20px)';
+    oldEl.classList.remove('active');
+  }
+
+  // Show date badge after stage 1
+  if (newStage >= 2) {
+    dateBadge.classList.add('visible');
+  }
+
+  // Update hint
+  if (newStage >= TOTAL_STAGES) {
+    hint.classList.remove('visible');
+  } else {
+    hint.classList.add('visible');
+  }
+
+  // If going to stage 2, scatter → heart transition
+  if (newStage === 2) {
+    targetMode = 'heart';
+  }
+
+  // If going to stage 3, burst particles
+  if (newStage === 3) {
+    // Convert all particles to burst mode
+    particles.forEach(p => {
+      p.angle = Math.atan2(p.y - H/2, p.x - W/2);
+      p.speed = Math.random() * 5 + 2;
+      p.opacity = 1;
+      p.size = Math.random() * 3 + 1;
+    });
+    targetMode = 'burst';
+    // Initial firework
+    for (let i = 0; i < 3; i++) {
+      setTimeout(() => spawnFirework(W/2, H/2), i * 300);
+    }
+  }
+
+  // If going to stage 4
+  if (newStage === 4) {
+    targetMode = 'firework';
+    particles.forEach(p => {
+      p.reset();
+      p.baseX = W/2 + (Math.random() - 0.5) * W * 0.8;
+      p.baseY = H/2 + (Math.random() - 0.5) * H * 0.6;
+      p.x = p.baseX;
+      p.y = p.baseY;
+      p.size = Math.random() * 3 + 1;
+    });
+    // Big firework burst
+    spawnFirework(W/2, H/2);
+    spawnFirework(W * 0.3, H * 0.4);
+    spawnFirework(W * 0.7, H * 0.6);
+  }
+
+  // Fade in new
+  setTimeout(() => {
+    if (newEl) {
+      newEl.style.opacity = '1';
+      newEl.style.transform = 'translateY(0)';
+      newEl.classList.add('active');
+    }
+    stage = newStage;
+    setTimeout(() => { transitioning = false; }, 800);
+  }, 400);
+}
+
+// Click / tap handler
+document.addEventListener('click', (e) => {
+  if (e.target === document.getElementById('musicBtn')) return;
+  if (stage < TOTAL_STAGES) {
+    transitionTo(stage + 1);
+  }
+});
+
+// Touch handler
+document.addEventListener('touchstart', (e) => {
+  if (e.target === document.getElementById('musicBtn')) return;
+  if (stage < TOTAL_STAGES) {
+    transitionTo(stage + 1);
+  }
+});
+
+// Keyboard
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' || e.code === 'ArrowRight' || e.code === 'ArrowDown') {
+    e.preventDefault();
+    if (stage < TOTAL_STAGES) transitionTo(stage + 1);
+  }
+  if (e.code === 'ArrowLeft' || e.code === 'ArrowUp') {
+    e.preventDefault();
+    if (stage > 1) transitionTo(stage - 1);
+  }
+  if (e.code === 'KeyM') {
+    toggleAudio();
+  }
+});
+
+// Initial setup
+stages[1].style.opacity = '1';
+stages[1].style.transform = 'translateY(0)';
+stages[1].classList.add('active');
+
+// Pre-style all inactive stages
+[2,3,4].forEach(s => {
+  stages[s].style.opacity = '0';
+  stages[s].style.transform = 'translateY(20px)';
+});
+
+console.log('🌹 520 · 告白 — 轻触屏幕开始仪式');
+console.log('   🎵 按 M 键或点击右下角音符开启音乐');
+console.log('   ⌨  空格键/方向键 也可翻页');
+</script>
+</body>
+</html>
